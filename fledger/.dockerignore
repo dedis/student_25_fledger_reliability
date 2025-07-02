@@ -1,0 +1,7 @@
+.devbox
+.git
+examples
+test
+Dockerfile*
+Makefile
+*.md

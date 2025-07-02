@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <title>Danu - Decentralized Resource Sharing</title>
+    <link data-trunk rel="css" href="main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <script>
+        function init_jsi() {
+            if (window.wasmBindings) {
+                new window.wasmBindings.JSInterface().then((res) => { jsi = res });
+            } else {
+                setTimeout(init_jsi, 500);
+            }
+        }
+        window.addEventListener("load", (event) => { init_jsi(); });
+    </script>
+</head>
+
+<body>
+    <header>
+        <h1>Danu</h1>
+        <p class="tagline">Decentralized Resource Sharing in Your Browser</p>
+    </header>
+
+    <!-- Navigation bar -->
+    <nav class="main-nav">
+        <div class="nav-container">
+            <ul class="module-tabs">
+                <li class="active" id="menu-home"><a href="#" data-module="home" class="module-link"><i
+                            class="fas fa-home"></i>
+                        Home</a></li>
+                <li class="hidden" id="menu-page-edit"><a href="#" data-module="page-edit" class="module-link"><i
+                            class="fas fa-share-alt"></i> Store
+                        webpage</a></li>
+                <li class="hidden" id="menu-chat"><a href="#" data-module="chat" class="module-link"><i
+                            class="fas fa-comments"></i> Global Chat</a>
+                </li>
+                <li class="hidden" id="menu-proxy"><a href="#" data-module="proxy" class="module-link"><i
+                            class="fas fa-globe"></i> Web Proxy</a></li>
+            </ul>
+            <div class="external-links">
+                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <a href="https://github.com/ineiti/fledger" target="_blank" class="external-link">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+                <a href="https://ineiti.ch" target="_blank" class="external-link">
+                    <i class="fas fa-blog"></i> Blog
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container">
+            <!-- Left column - Node Statistics -->
+            <div class="column stats-column left" id="node-stats">
+                <h3>Node Statistics <button class="expand-btn" onclick="toggle_div('stats-left', this)"><i
+                            class="fas fa-chevron-left"></i></button></h3>
+                <div class="stats-content">
+                    <div class="stat-item">
+                        <span class="stat-label">Name:</span>
+                        <span class="stat-value" id="node_info"></span>
+                    </div>
+                    <!-- <div class="stat-item">
+                        <span class="stat-label">Status:</span>
+                        <span class="stat-value">
+                            <span class="status-pill status-connecting">connecting</span>
+                            <span class="status-pill status-updating">updating</span>
+                            <span class="status-pill status-connected">connected</span>
+                        </span>
+                    </div> -->
+                    <div class="stat-item">
+                        <span class="stat-label">DHT Connections:</span>
+                        <span class="stat-value"><span id="dht_connections"></span> / <span
+                                id="nodes_online"></span></span>
+                    </div>
+                    <!-- <div class="stat-item">
+                        <span class="stat-label">Local Pages:</span>
+                        <span class="stat-value" id="dht-pages-own">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Pages:</span>
+                        <span class="stat-value" id="dht-pages-total">0</span>
+                    </div> -->
+                    <div class="stat-item">
+                        <span class="stat-label">Messages:</span>
+                        <span class="stat-value"><span id="msgs_local"></span> / <span id="msgs_system"></span></span>
+                    </div>
+                    <div class="expanded-stats" id="stats-left">
+                        <!-- <div class="stat-item">
+                            <span class="stat-label">Storage:</span>
+                            <span class="stat-value"><span id="dht-storage-local"></span>/<span
+                                    id="dht-storage-max"></span></span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">DHT Connections:</span>
+                            <span class="stat-value" id="dht-router-connections">0 - 0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">DHT Storage Buckets:</span>
+                            <span class="stat-value" id="dht-storage-buckets">0 - 0</span>
+                        </div> -->
+                        <div class="stat-item">
+                            <span class="stat-label">Random Connections:</span>
+                            <span class="stat-value"><span id="nodes_connected"></span> / <span
+                                    id="nodes_online_random"></span></span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Version:</span>
+                            <span class="stat-value" id="version">0 - 0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle column - Main Content -->
+            <div class="column main-column">
+                <!-- Home Module Content -->
+                <div id="home-module" class="module-content active">
+                    <h2>About Danu <button class="expand-btn" id="loading-info-button"
+                            onclick="toggle_div('loading-info', this)"><i class="fas fa-chevron-down"></i></button>
+                    </h2>
+                    <div id="loading-info" class="show">
+                        <section class="about-section">
+                            <p>Danu is a decentralized resource sharing tool that runs directly in your browser. It
+                                enables secure,
+                                peer-to-peer communication without relying on central servers.</p>
+
+                            <p>The project consists of three main modules:</p>
+                            <ul>
+                                <li><strong>Public Messaging Board</strong> - Share messages on a decentralized public
+                                    board
+                                </li>
+                                <li><strong>WebTorrent Sharing</strong> - Share webpages in a torrent-like system</li>
+                                <li><strong>Proxy Viewing</strong> - Browse webpages through a decentralized proxy</li>
+                            </ul>
+
+                            <p>For more information, visit <a href="https://web.fledg.re/"
+                                    target="_blank">web.fledg.re</a>.
+                            </p>
+                        </section>
+
+                        <section class="status-section">
+                            <h2>Node Status</h2>
+                            <ol class="status-steps" id="status-steps">
+                                <li>Connecting to signalling server</li>
+                            </ol>
+                        </section>
+                    </div>
+
+                    <div id="home_page" hidden>
+                        <section>
+                            <h2 id="dht_page_path">UNKNOWN PATH</h2>
+                            <div class="homepage-container" id="dht_page">
+                                <p>Loading available pages...</p>
+                            </div>
+                        </section>
+                        <section id="page_family">
+                            <div id="page_family_parents">
+                                <h2>Parent pages</h2>
+                                <p>The following pages point to this page as child:</p>
+                                <div class="page-links" id="page_family_parents_list">
+                                </div>
+                            </div>
+                            <div id="page_family_children">
+                                <h2>Children pages</h2>
+                                <p>The current page points to the following pages as children:</p>
+                                <div class="page-links" id="page_family_children_list">
+                                </div>
+                            </div>
+                        </section>
+                        <section id="page_cuckoos">
+                            <div id="page_cuckoos_parent">
+                                <h2>Parent cuckoo</h2>
+                                <p>The current page is attached to the following page:</p>
+                                <div class="page-links" id="page_cuckoos_parent_list">
+                                </div>
+                            </div>
+                            <div id="page_cuckoos_attached">
+                                <h2>Cuckoo pages</h2>
+                                <p>These pages are foreign pages attached to the current page.</p>
+                                <div class="page-links" id="page_cuckoos_attached_list">
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <!-- Chat Module Content -->
+                <div id="chat-module" class="module-content">
+                    <section class="chat-container">
+                        <div class="chat-main">
+                            <div class="message-area" id="messages">
+                            </div>
+                            <div class="your-id" style="padding: 0.5rem; text-align: center;">
+                                Your ID: <span id="username_display"
+                                    style="border: none; background: transparent; font-family: monospace;"></span>
+                            </div>
+                            <div class="message-input">
+                                <textarea type="text" id="your_message" placeholder="Type your message..."
+                                    onkeydown="if(event.key === 'Enter' && (event.metaKey || event.ctrlKey)) document.getElementById('send_message').click();"></textarea>
+                                <button id="send_message" onclick="jsi.button_click('send-message')"><i
+                                        class="fas fa-paper-plane"></i></button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Page Sharing Module Content -->
+                <div id="page-edit-module" class="module-content">
+                    <section class="module-header">
+                        <h2>Store Webpage</h2>
+                        <p>Edit and save HTML content for your webpage.</p>
+                    </section>
+                    <section class="editor-section">
+                        <div id="editor" class="editor-container"></div>
+                        <div id="page-id-div" class="page-id-label hidden">Page-ID: <span id="page-id"
+                                class="page-id">deadbeef</span></div>
+                        <div id="page-version-div" class="page-id-label hidden">Version: <span id="page-version"
+                                class="page-id">0</span></div>
+                        <div class="editor-controls">
+                            <input type="text" id="page-path" placeholder="Enter path">
+                            <button id="create-page" class="primary-button"
+                                onclick="jsi.button_click('create-page')">Create Page</button>
+                            <button id="update-page" class="primary-button hidden"
+                                onclick="jsi.button_click('update-page')">Update Page</button>
+                            <button id="reset-page" class="secondary-button hidden"
+                                onclick="jsi.button_click('reset-page')">Reset Page</button>
+                        </div>
+                        <section class="editable-pages">
+                            <h3>Editable Pages</h3>
+                            <ul id="editable-pages">
+                            </ul>
+                        </section>
+                    </section>
+                </div>
+
+                <!-- Proxy Module Content -->
+                <div id="proxy-module" class="module-content">
+                    <section class="module-header">
+                        <h2>Web Proxy</h2>
+                        <p>Browse websites through a decentralized proxy network for enhanced privacy</p>
+                    </section>
+
+                    <section class="proxy-controls">
+                        <div class="url-input-container">
+                            <div class="url-input-wrap">
+                                <i class="fas fa-search"></i>
+                                <input type="url" id="proxy_url" placeholder="Enter URL to browse via proxy"
+                                    value="https://lobste.rs/"
+                                    onkeypress="if(event.key === 'Enter') document.getElementById('proxy_request').click();" />
+                                <button class="browse-btn" id="proxy_request"
+                                    onclick="jsi.button_click('proxy-request')">Browse</button>
+                            </div>
+                        </div>
+                        <!-- Updated proxy display with border and an example page -->
+                        <div id="proxy_div" style="border:1px solid var(--border-color); padding:1rem;">
+                        </div>
+                    </section>
+
+                    <!-- <section class="proxy-history">
+                        <h3>Browsing History <button id="clear-history-btn">Clear</button></h3>
+                        <div class="history-items" id="proxy_history">
+                            <div class="history-item">
+                                <div class="history-time">12:05</div>
+                                <div class="history-title">Privacy Documentation</div>
+                                <div class="history-url">https://privacy.example.com/docs</div>
+                                <div class="history-actions">
+                                    <button class="action-btn small"><i class="fas fa-redo"></i></button>
+                                    <button class="action-btn small"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </section> -->
+                </div>
+            </div>
+
+            <!-- Right column - Global Statistics -->
+            <div class="column stats-column right" id="global-stats">
+                <h3>Global Statistics <button class="expand-btn" onclick="toggle_div('stats-right', this)"><i
+                            class="fas fa-chevron-left"></i></button></h3>
+                <div class="stats-content">
+                    <div class="stat-item">
+                        <span class="stat-label">Realm Space:</span>
+                        <span class="stat-value">
+                            <span id="dht_storage_local"></span> / <span id="dht_storage_limit"></span>
+                        </span>
+                    </div>
+                    <!-- <div class="stat-item">
+                        <span class="stat-label">Browser / CLI Nodes:</span>
+                        <span class="stat-value"><span id="nodes-browser"></span><span id="nodes-cli"></span></span>
+                    </div> -->
+                    <div class="expanded-stats" id="stats-right">
+                        <!-- <div class="stat-item">
+                            <span class="stat-label">Total Data (estimation):</span>
+                            <span class="stat-value" id="total-data"></span>
+                        </div> -->
+                        <div class="stat-item">
+                            <span class="stat-label">Number of realms:</span>
+                            <span class="stat-value" id="realms_count"></span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Connected Node Stats:</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="connected_stats"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- New footer for mobile view -->
+    <footer id="mobile-footer" class="mobile-footer">
+        <!-- External links will be moved here in mobile view -->
+    </footer>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+    <script>
+        window.addEventListener('hashchange', function () {
+            jsi.visit_page(window.location.hash);
+        });
+
+        // Define toggle_div function globally
+        function toggle_div(id, caller) {
+            const statsContent = document.getElementById(id);
+            statsContent.classList.toggle('show');
+
+            // Toggle icon
+            const icon = caller.querySelector('i');
+            if (icon.classList.contains('fa-chevron-down')) {
+                icon.classList.replace('fa-chevron-down', 'fa-chevron-left');
+            } else {
+                icon.classList.replace('fa-chevron-left', 'fa-chevron-down');
+            }
+        }
+
+        // Ensure DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            // Theme management
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIcon = themeToggle.querySelector('i');
+
+            // Get system preferred theme only, no localStorage override
+            function getPreferredTheme() {
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+
+            // Apply theme without storing manually
+            function setTheme(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                if (theme === 'dark') {
+                    themeIcon.classList.remove('fa-moon');
+                    themeIcon.classList.add('fa-sun');
+                } else {
+                    themeIcon.classList.remove('fa-sun');
+                    themeIcon.classList.add('fa-moon');
+                }
+            }
+
+            // Initialize theme from system preference
+            const initialTheme = getPreferredTheme();
+            setTheme(initialTheme);
+
+            // Theme toggle handler for manual override (won't be persisted)
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                setTheme(newTheme);
+            });
+
+            // Always update theme when system preference changes
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                setTheme(e.matches ? 'dark' : 'light');
+            });
+
+            /*
+                    // Update status pill visibility - for demonstration
+                    const currentStatus = ['connecting', 'updating', 'connected'][Math.floor(Math.random() * 3)];
+                    document.querySelectorAll('.status-pill').forEach(pill => {
+                        pill.classList.remove('active');
+                    });
+                    const statusPill = document.querySelector(`.status-pill.status-${currentStatus}`);
+                    if (statusPill) {
+                        statusPill.classList.add('active');
+                    }
+            */
+            // Module tab switching functionality
+            document.querySelectorAll('.module-link').forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    // Get the module ID from data attribute
+                    const moduleId = this.getAttribute('data-module');
+
+                    // Remove active class from all tabs
+                    document.querySelectorAll('.module-tabs li').forEach(tab => {
+                        tab.classList.remove('active');
+                    });
+
+                    // Add active class to current tab
+                    this.closest('li').classList.add('active');
+
+                    // Hide all module content
+                    document.querySelectorAll('.module-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+
+                    // Show the selected module content
+                    document.getElementById(`${moduleId}-module`).classList.add('active');
+
+                    if (moduleId == "chat") {
+                        document.getElementById('your_message').focus();
+                        let msgs = document.getElementById('messages');
+                        msgs.scrollTop = msgs.scrollHeight
+                    }
+                });
+            });
+
+            /*
+            // Chat module functionality
+            const chatInput = document.getElementById('chat-input');
+            const sendButton = document.getElementById('send-message-btn');
+
+            function sendMessage() {
+                if (chatInput.value.trim() !== '') {
+                    const messageContainer = document.getElementById('message-container');
+                    const now = new Date();
+                    const timeString = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+                    const messageHTML = `
+                        <div class="message-item sent">
+                            <div class="message-sender">You</div>
+                            <div class="message-content">${chatInput.value}</div>
+                            <div class="message-time">${timeString}</div>
+                        </div>
+                    `;
+
+                    messageContainer.innerHTML += messageHTML;
+                    messageContainer.scrollTop = messageContainer.scrollHeight;
+                    chatInput.value = '';
+                }
+            }
+
+            if (sendButton) {
+                sendButton.addEventListener('click', sendMessage);
+            }
+
+            if (chatInput) {
+                chatInput.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        sendMessage();
+                    }
+                });
+            }
+    */
+
+            // Mobile layout adjustments
+            function handleMobileLayout() {
+                const container = document.querySelector('.container');
+                const nodeStats = document.getElementById('node-stats');
+                const globalStats = document.getElementById('global-stats');
+                const mainColumn = document.querySelector('.main-column');
+                const externalLinks = document.querySelector('.external-links');
+                const mobileFooter = document.getElementById('mobile-footer');
+
+                if (window.innerWidth <= 900) {
+                    // Simple approach: remove all elements and add them back in correct order
+                    // First, detach all elements from container without removing their event listeners
+                    if (nodeStats.parentElement) {
+                        nodeStats.parentElement.removeChild(nodeStats);
+                    }
+                    if (mainColumn.parentElement) {
+                        mainColumn.parentElement.removeChild(mainColumn);
+                    }
+                    if (globalStats.parentElement) {
+                        globalStats.parentElement.removeChild(globalStats);
+                    }
+
+                    // Now add them back in the desired order for mobile:
+                    // 1. Main column
+                    container.appendChild(mainColumn);
+                    // 2. Node stats
+                    container.appendChild(nodeStats);
+                    // 3. Global stats
+                    container.appendChild(globalStats);
+
+                    // Apply mobile-specific styling
+                    nodeStats.classList.add('mobile-stats');
+                    globalStats.classList.add('mobile-stats');
+
+                    // Move GitHub and blog links to footer for mobile view
+                    const githubLink = externalLinks.querySelector('a[href*="github"]');
+                    const blogLink = externalLinks.querySelector('a[href*="ineiti.ch"]');
+
+                    // Clear footer and add the links
+                    mobileFooter.innerHTML = '';
+                    if (githubLink) {
+                        const githubClone = githubLink.cloneNode(true);
+                        mobileFooter.appendChild(githubClone);
+                    }
+                    if (blogLink) {
+                        const blogClone = blogLink.cloneNode(true);
+                        mobileFooter.appendChild(blogClone);
+                    }
+
+                    // Show footer in mobile view
+                    mobileFooter.style.display = 'flex';
+
+                    // Hide original links in navbar
+                    if (githubLink) githubLink.style.display = 'none';
+                    if (blogLink) blogLink.style.display = 'none';
+                } else {
+                    // Desktop layout: nodeStats on left, mainColumn in middle, globalStats on right
+                    // Remove all elements first
+                    if (nodeStats.parentElement) {
+                        nodeStats.parentElement.removeChild(nodeStats);
+                    }
+                    if (mainColumn.parentElement) {
+                        mainColumn.parentElement.removeChild(mainColumn);
+                    }
+                    if (globalStats.parentElement) {
+                        globalStats.parentElement.removeChild(globalStats);
+                    }
+
+                    // Add back in desktop order
+                    container.appendChild(nodeStats);
+                    container.appendChild(mainColumn);
+                    container.appendChild(globalStats);
+
+                    // Remove mobile-specific styling
+                    nodeStats.classList.remove('mobile-stats');
+                    globalStats.classList.remove('mobile-stats');
+
+                    // Hide mobile footer
+                    mobileFooter.style.display = 'none';
+
+                    // Show original links in navbar
+                    const githubLink = externalLinks.querySelector('a[href*="github"]');
+                    const blogLink = externalLinks.querySelector('a[href*="ineiti.ch"]');
+                    if (githubLink) githubLink.style.display = '';
+                    if (blogLink) blogLink.style.display = '';
+                }
+            }
+
+            // Initialize mobile layout
+            handleMobileLayout();
+
+            // Update on resize
+            window.addEventListener('resize', handleMobileLayout);
+
+            // Initialize Ace Editor for HTML content
+            var editor = ace.edit("editor");
+            editor.setTheme("ace/theme/monokai");
+            editor.session.setMode("ace/mode/html");
+            // Set default content with a simple "Hello Danu" page
+            // // Add event listener for cmd+enter or ctrl+enter in the editor
+            // editor.commands.addCommand({
+            //     name: "savePageShortcut",
+            //     bindKey: { win: "Ctrl-Enter", mac: "Cmd-Enter" },
+            //     exec: function () {
+            //         document.getElementById('update-page').click();
+            //     }
+            // });
+
+        });
+    </script>
+
+    <style>
+        /* Styling for mobile footer */
+        .mobile-footer {
+            display: none;
+            justify-content: center;
+            padding: 1rem;
+            background-color: var(--background-color);
+            border-top: 1px solid var(--border-color);
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            z-index: 10;
+        }
+
+        .mobile-footer a {
+            margin: 0 1rem;
+            color: var(--text-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        @media (max-width: 900px) {
+
+            /* Add some bottom padding to main content to account for fixed footer */
+            main {
+                padding-bottom: 4rem;
+            }
+        }
+    </style>
+
+</html>

@@ -1,0 +1,91 @@
+- name: Prepare ansible host
+  hosts: 127.0.0.1
+  connection: local
+  tasks:
+    - name: Generate node environments
+      changed_when: true
+      ansible.builtin.command:
+        cmd: ./configure.sh
+
+- name: Prepare fledger nodes
+  hosts: nodes
+  become: true
+  tasks:
+    - name: Stop nodes
+      ansible.builtin.script: ../playbook/scripts/stop-nodes.sh
+
+    - name: Copy service
+      ansible.builtin.copy:
+        src: ../playbook/fledger.service
+        dest: ~/
+        mode: preserve
+
+    - name: Download fledger
+      ansible.builtin.uri:
+        url: http://192.168.254.2/fledger
+        dest: ~/fledger
+        mode: "0755"
+        force: true
+        status_code:
+          - 200
+          - 304
+
+    - name: Copy environment
+      ansible.builtin.copy:
+        src: "env.systemd/{{ inventory_hostname }}/"
+        dest: ~/env.systemd
+        mode: preserve
+
+- name: Prepare central node
+  hosts: central
+  become: true
+  tasks:
+    - name: Disable ip forwarding
+      ansible.posix.sysctl:
+        name: net.ipv4.ip_forward
+        value: 0
+        sysctl_set: true
+        state: present
+        reload: true
+
+    - name: Stop central
+      ansible.builtin.script: ../playbook/scripts/stop-central.sh
+      register: out
+
+    - name: Copy files
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: ~/
+        mode: preserve
+      loop:
+        - ../playbook/flsignal.service
+        - ../playbook/flrealm.service
+        - env.systemd/central
+
+    - name: Download binaries
+      ansible.builtin.uri:
+        url: "http://192.168.254.2/{{ item }}"
+        dest: "~/{{ item }}"
+        mode: "0755"
+        force: true
+        status_code:
+          - 200
+          - 304
+      loop:
+        - fledger
+        - flsignal
+
+    - name: Start central
+      ansible.builtin.script: ../playbook/scripts/start-central.sh
+      register: out
+
+- name: Run the simulation
+  hosts: nodes
+  become: true
+  tasks:
+    - name: Start nodes
+      ansible.builtin.script: ../playbook/scripts/start-nodes.sh
+
+    - name: Wait for simulation end
+      ansible.builtin.script: ../playbook/scripts/wait-nodes.sh
+      register: wait_nodes

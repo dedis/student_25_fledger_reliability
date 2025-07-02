@@ -1,0 +1,11 @@
+[Unit]
+Description=Laravel Octane
+After=network.target
+
+[Service]
+PrivateTmp=true
+Type=simple
+ExecStart=/usr/bin/php /srv/%i/current/artisan octane:frankenphp --port 80
+
+[Install]
+WantedBy=multi-user.target

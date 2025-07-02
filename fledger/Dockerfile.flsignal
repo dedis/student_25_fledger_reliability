@@ -1,0 +1,13 @@
+FROM debian:bookworm-slim
+
+RUN apt update && apt install -y patchelf ca-certificates
+
+COPY target-common/release/flsignal flsignal
+RUN patchelf --set-interpreter /usr/lib64/ld-linux-x86-64.so.2 flsignal
+
+FROM debian:bookworm-slim
+WORKDIR /fledger
+COPY --from=0 flsignal /fledger/flsignal
+COPY --from=0 /etc/ssl /etc/ssl
+
+ENTRYPOINT ["/fledger/flsignal"]

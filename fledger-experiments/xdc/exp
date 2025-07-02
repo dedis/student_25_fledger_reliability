@@ -1,0 +1,25 @@
+#!/bin/bash
+
+echo "Running experiment..."
+
+exp="$1"
+net=$(grep -e "NETWORK=" "$exp/env" | sed -e 's/NETWORK=//')
+playbook="../playbook/default.yaml"
+hosts="../networks/$net/hosts"
+
+echo "Running experiment [$exp] on net [$net]"
+cd "$HOME/experiments/$exp" || exit 1
+
+if ! test -f "$playbook"; then
+  echo "FATAL: $playbook not found."
+  exit 1
+fi
+cp "$playbook" playbook.yaml
+
+if ! test -f "$hosts"; then
+  echo "FATAL: $hosts not found."
+  exit 1
+fi
+cp "$hosts" hosts
+
+LC_ALL=C.UTF-8 ansible-playbook -i hosts playbook.yaml

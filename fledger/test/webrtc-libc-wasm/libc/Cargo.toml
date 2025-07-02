@@ -1,0 +1,21 @@
+[package]
+name = "webrtc-test-libc"
+version = "0.9.1"
+edition = "2021"
+authors = ["Linus Gasser <linus@gasser.blue>"]
+description = "Test connection-setup for libc"
+repository = "https://github.com/ineiti/fledger"
+license = "MIT OR Apache-2.0"
+homepage = "https://fledg.re"
+readme = "README.md"
+keywords = ["test", "libc", "webrtc", "websocket", "fledger"]
+
+[dependencies]
+flmodules = {path="../../../flmodules", version = "0.9"}
+flarch = {path="../../../flarch", version = "0.9"}
+
+anyhow = { version = "1", features = ["backtrace"]}
+log = "0.4"
+thiserror = "2"
+tokio = "1"
+tokio-stream = "0.1"

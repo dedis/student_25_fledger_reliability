@@ -1,0 +1,43 @@
+[package]
+name = "metrics-exporter-influx"
+version = "0.2.2"
+edition = "2021"
+description = "A metrics-compatible exporter for sending metrics to Influx/Grafana Cloud"
+homepage = "https://github.com/sevco/metrics-exporter-influx"
+repository = "https://github.com/sevco/metrics-exporter-influx"
+
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = ["http"]
+http = ["reqwest", "dep:http"]
+
+[dependencies]
+metrics = "0.21.1"
+metrics-util = "0.15.1"
+quanta = { version = "0.12", default-features = false }
+chrono = { version = "0.4.26", default-features = false, features = [
+  "serde",
+  "clock",
+] }
+itertools = "0.13.0"
+tokio = { version = "1.28.2", features = ["time"] }
+tokio-retry = "0.3.0"
+anyhow = "1.0.71"
+thiserror = "1.0.40"
+async-trait = "0.1.68"
+tracing = { version = "0.1.37", features = ["log"] }
+reqwest = { version = "0.12.0", default-features = false, features = [
+  "rustls-tls",
+  "gzip",
+], optional = true }
+http = { version = "0.2.9", optional = true }
+indexmap = "1.9.3"
+
+[dev-dependencies]
+tokio = { version = "1.28.2", features = ["macros", "rt-multi-thread"] }
+tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
+tempfile = "3.5.0"
+httpmock = "0.7.0"

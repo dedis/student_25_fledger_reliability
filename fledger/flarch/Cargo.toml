@@ -1,0 +1,80 @@
+[package]
+authors = ["Linus Gasser <linus@gasser.blue>"]
+description = "Common implementations for libc and wasm"
+edition = "2021"
+homepage = "https://fledg.re"
+keywords = ["arch", "common", "fledger"]
+license = "MIT OR Apache-2.0"
+name = "flarch"
+readme = "README.md"
+repository = "https://github.com/ineiti/fledger"
+version = "0.9.2"
+
+[features]
+node = ["flmacro/node"]
+
+[dependencies]
+flmacro = { version = "0.9", path = "../flmacro" }
+
+anyhow = { version = "1", features = ["backtrace"] }
+bytes = "1.9"
+chrono = "0.4"
+enum-display = "0.1"
+env_logger = "0.11"
+futures = "0.3"
+log = "0.4"
+thiserror = "2"
+tokio = { version = "1", features = ["rt", "macros", "time", "sync"] }
+async-trait = "0.1"
+rand = { version = "0.8" }
+regex = "1"
+# serde_with version 2 doesn't work with old configs
+serde_with = { version = "3", features = ["json", "base64", "hex"] }
+# serde_yaml 0.9 uses tags in yaml, which fails here
+serde_yaml = "0.8"
+serde_json = "1"
+serde = { version = "1", features = ["derive"] }
+sha2 = "0.10"
+rmp-serde = "1"
+btparse = "0.2"
+metrics = "0.21.1"
+
+# For libc
+[target.'cfg(target_family="unix")'.dependencies]
+webrtc = { version = "0.12" }
+tokio-tungstenite = { version = "0.26", features = ["rustls-tls-native-roots"] }
+
+# For wasm
+[target.'cfg(target_family="wasm")'.dependencies]
+js-sys = { version = "0.3" }
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+wasm-bindgen-futures = { version = "0.4" }
+wasm-bindgen-test = "0.3"
+wasmtimer = "0.4"
+serde-wasm-bindgen = { version = "0.6" }
+web-sys = { version = "0.3", features = [
+  'Window',
+  "Storage",
+  "console",
+  "MessageEvent",
+  "RtcConfiguration",
+  "RtcDataChannel",
+  "RtcDataChannelEvent",
+  "RtcDataChannelState",
+  "RtcIceCandidate",
+  "RtcIceCandidateInit",
+  "RtcIceConnectionState",
+  "RtcIceGatheringState",
+  "RtcPeerConnection",
+  "RtcPeerConnectionIceEvent",
+  "RtcSdpType",
+  "RtcSessionDescriptionInit",
+  "RtcSignalingState",
+  "ErrorEvent",
+  "MessageEvent",
+  "WebSocket",
+] }
+
+# [dev-dependencies]
+# flexi_logger = "0.28"
+# wasm-bindgen-test = "0.3"

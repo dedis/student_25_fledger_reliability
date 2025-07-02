@@ -1,0 +1,9 @@
+SPHERE_PROJECT=fledger
+SPHERE_USERNAME=abehsser
+
+# this is the sphere repo containing model.py
+# it is required to upload models to sphere
+SPHERE_REPO=/home/llama/fledger/fledger-sphere/
+
+HERMES_URL=https://fledger.yohan.ch
+HERMES_TOKEN=1|d4EeHkRPlqwpgLpALyTor5FxHI4NWg1LXJtf5NZBfd82aa17
