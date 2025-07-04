@@ -44,4 +44,23 @@ class NodeController extends Controller
 
         return response()->json($response, Response::HTTP_OK);
     }
+
+    public function setTargetPages(Request $request, Node $node)
+    {
+        Gate::authorize('update nodes');
+
+        $data = $request->validate([
+            'stored_targets' => 'array|max:1024',
+            'stored_targets.*' => 'string|max:255',
+        ]);
+
+        if (isset($data['stored_targets'])) {
+            $node->stored_targets = $data['stored_targets'];
+            $node->save();
+        }
+
+        $targetPageIds = collect($node->target_pages)->pluck('id')->toArray();
+
+        return response()->json(['target_page_ids' => $targetPageIds], Response::HTTP_OK);
+    }
 }

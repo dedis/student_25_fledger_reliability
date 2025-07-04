@@ -23,6 +23,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::resource('experiments', ExperimentController::class)
         ->only(['store', 'update']);
 
+    Route::post('/nodes/{node}/set-target-pages', [NodeController::class, 'setTargetPages'])
+        ->name('nodes.set-target-pages');
     Route::resource('experiments.nodes', NodeController::class)
         ->shallow()
         ->only(['store', 'update']);

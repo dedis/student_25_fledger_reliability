@@ -41,7 +41,12 @@ class Experiment extends Model
 
     public function infoLine(): string
     {
+        $this->load('nodes');
+
         $fetchSuccessRate = $this->fetchSuccessRate() * 100;
+        $fetchesTotal = $this->nodes
+            ->map(fn (Node $node) => $node->timelessDataPoints->where('name', 'fetch_requests_total')->sum('value'))
+            ->sum();
         $state = $this->ended_at
             ? 'Ended'
             : 'Ongoing';
@@ -52,15 +57,17 @@ class Experiment extends Model
         $evilPercentage = $this->nodes->count() > 0
             ? round($evilCount / $this->nodes->count() * 100)
             : 0;
+        $targetsStored = count($this->storedTargetPages());
 
         return collect([
             $state,
             $duration,
             "{$fetchSuccessRate}% f-success",
+            "{$fetchesTotal} fetches",
             "{$this->nodes->count()} nodes",
             "{$evilPercentage}% evil",
             "{$this->filler_amount} fillers",
-            "{$this->targets_per_node}/{$this->target_amount} targets",
+            "{$targetsStored}/{$this->target_amount} targets",
         ])->join(' | ');
     }
 
@@ -84,20 +91,25 @@ class Experiment extends Model
         return round($rate, 2);
     }
 
+    public function storedTargetPages(): array
+    {
+        $this->load(['nodes']);
+
+        return $this->nodes
+            ->where('evil_noforward', false)
+            ->flatMap(function (Node $node) {
+                return collect($node->stored_targets);
+            })
+            ->unique()
+            ->toArray();
+    }
+
     public function lostTargetPages(): array
     {
         $this->load(['nodes']);
         $targetIds = collect($this->target_pages)->pluck('id');
 
-        $propagatedTargetIds = collect($targetIds)->filter(function ($targetId) {
-            return $this->nodes
-                ->where('evil_noforward', false)
-                ->firstWhere(function ($node) use ($targetId) {
-                    $storedIds = collect($node->pages_stored)->pluck('id');
-
-                    return collect($storedIds)->contains($targetId);
-                });
-        });
+        $propagatedTargetIds = $this->storedTargetPages();
         $lostTargetIds = collect($targetIds)->diff($propagatedTargetIds)->values();
 
         return $lostTargetIds->toArray();

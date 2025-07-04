@@ -167,7 +167,7 @@ impl SimulationDht {
                     f.ds.store_flo(page.flo().clone())?;
                     wait_ms(500).await
                 }
-                wait_ms(30000).await;
+                wait_ms(15000).await;
             }
         }
 
@@ -186,8 +186,17 @@ impl SimulationDht {
         timeout_ms: u32,
         experiment_id: u32,
         evil_noforward: bool,
+        with_local_blacklists: bool,
     ) -> anyhow::Result<()> {
         let mut start_instant = Instant::now();
+
+        unsafe {
+            if with_local_blacklists {
+                log::info!("enabling local blacklists");
+                flmodules::dht_storage::messages::LOCAL_BLACKLISTS = true;
+                flmodules::dht_router::messages::LOCAL_BLACKLISTS = true;
+            }
+        }
 
         let node_name = f.node.node_config.info.name.clone();
         let mut state = SimulationState::new(experiment_id, node_name);
@@ -249,9 +258,19 @@ impl SimulationDht {
                 f.node.dht_storage.as_mut().unwrap().sync()?;
             }
 
-            if iteration % 30 == 0 {
-                let response = state.update_and_upload(&mut f).await;
-                if target_page_ids.is_empty() && !response.target_page_ids.is_empty() {
+            if iteration == 1 {
+                // initial full metrics upload, just to get some info on hermes
+                let _ = state.update_and_upload(&mut f).await;
+            }
+
+            if iteration % 10 == 0 && target_page_ids.is_empty() {
+                // target propagation not over
+                // sending light metrics (only stored target pages)
+                // and checking if propagation ended
+                let response = state.send_target_pages(&mut f).await;
+                if response.target_page_ids.is_some()
+                    && !response.target_page_ids.as_ref().unwrap().is_empty()
+                {
                     // target propagation ended, it's now time to fetch.
                     // resetting the timeout
                     log::info!(
@@ -259,7 +278,7 @@ impl SimulationDht {
                         start_instant.elapsed().as_secs()
                     );
                     start_instant = Instant::now();
-                    for target_page_id in response.target_page_ids {
+                    for target_page_id in response.target_page_ids.unwrap() {
                         target_page_ids.insert(target_page_id.clone());
                     }
 
@@ -274,6 +293,11 @@ impl SimulationDht {
                 }
             }
 
+            if iteration % 30 == 0 && !target_page_ids.is_empty() {
+                // fetching phase - full metrics upload
+                let _ = state.update_and_upload(&mut f).await;
+            }
+
             for page_id in target_page_ids.clone() {
                 if fetched_page_ids.contains(&page_id.clone()) {
                     continue;
@@ -281,6 +305,7 @@ impl SimulationDht {
                 let flo_id = FloID::from_str(&page_id.clone())?;
                 let global_page_id = Self::make_page_id(realm_id.clone(), flo_id);
                 let page = Self::fetch_page(&mut f, global_page_id).await;
+                state.increment_fetch_requests_total();
                 if page.is_ok() {
                     fetched_page_ids.insert(page_id.clone());
                 }
@@ -300,5 +325,35 @@ impl SimulationDht {
                 f.loop_node(crate::FledgerState::Forever).await?;
             }
         }
+    }
+
+    pub async fn just_fetch_once(mut f: Fledger) -> anyhow::Result<()> {
+        f.loop_node(crate::FledgerState::DHTAvailable).await?;
+        f.loop_node(crate::FledgerState::Connected(2)).await?;
+
+        let realm_id = RealmView::new_first(f.node.dht_storage.as_ref().unwrap().clone())
+            .await?
+            .realm
+            .realm_id();
+
+        let flo_id =
+            FloID::from_str("5efe0a6143df5641af9d6036ba8da82222bb30211c21ba5ec236851efda38420")?;
+        let global_page_id = Self::make_page_id(realm_id.clone(), flo_id);
+
+        for i in 0..10 {
+            wait_ms(1000).await;
+
+            let page = Self::fetch_page(&mut f, global_page_id.clone()).await;
+
+            if page.is_ok() {
+                log::info!("God made a miracle");
+            } else {
+                log::info!("Fetch {i} done.");
+            }
+        }
+
+        f.loop_node(crate::FledgerState::Forever).await?;
+
+        Ok(())
     }
 }

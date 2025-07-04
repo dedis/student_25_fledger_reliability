@@ -21,7 +21,7 @@ INSTANCES_PER_NODE=$(grep -e "INSTANCES_PER_NODE=" env | sed -e 's/INSTANCES_PER
 LOOP_DELAY=1000
 CENTRAL_HOST=10.0.128.128
 
-MALICIOUS_PERCENT=30
+MALICIOUS_PERCENT=20
 MALICIOUS_AMOUNT=$((NODE_AMOUNT * INSTANCES_PER_NODE * MALICIOUS_PERCENT / 100))
 
 # Either 48 pages of 10k chars, or 110 pages of 5k chars
@@ -29,11 +29,14 @@ FILLER_AMOUNT=105
 TARGET_AMOUNT=5
 PAGE_SIZE=5000 # size of both filler pages and target page
 
+ENABLE_LOCAL_BLACKLISTS="--with-local-blacklists" # empty or "--with-local-blacklists"
+#ENABLE_LOCAL_BLACKLISTS=""
 ENABLE_SYNC="--enable-sync"   # empty or "--enable-sync"
 BOOTWAIT_MAX=5000             # randomize instance start time so that they don't all start together
 CONNECTION_DELAY=20000        # time before filler pages are created
 PAGES_PROPAGATION_DELAY=10000 # time before target page is created
 TIMEOUT_MS=300000             # timeout for each instance
+PROPAGATION_TIMEOUT_MS=600000 # propagation timeout for each instance
 
 REALM_SIZE=100000
 REALM_FLO_SIZE=100000
@@ -53,7 +56,7 @@ for i in $(seq 0 $((NODE_AMOUNT - 1))); do
       instance="fledger-n0$i-$j"
     fi
     current_instance=$((i * INSTANCES_PER_NODE + j))
-    cmd="--bootwait-max $BOOTWAIT_MAX simulation dht-fetch-pages --timeout-ms $TIMEOUT_MS --experiment-id $EXPERIMENT_ID $ENABLE_SYNC"
+    cmd="--bootwait-max $BOOTWAIT_MAX simulation dht-fetch-pages --timeout-ms $TIMEOUT_MS --experiment-id $EXPERIMENT_ID $ENABLE_SYNC $ENABLE_LOCAL_BLACKLISTS --propagation-timeout-ms $PROPAGATION_TIMEOUT_MS"
     if test $current_instance -le $MALICIOUS_AMOUNT; then
       cmd="--evil-noforward $cmd"
     fi

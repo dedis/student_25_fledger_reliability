@@ -24,6 +24,7 @@ class Node extends Model
         'target_pages',
         'last_update_timestamp',
         'evil_noforward',
+        'stored_targets',
     ];
 
     public function experiment(): BelongsTo
@@ -48,6 +49,7 @@ class Node extends Model
             'target_pages' => 'array',
             'last_update_timestamp' => 'datetime',
             'evil_noforward' => 'boolean',
+            'stored_targets' => 'array',
         ];
     }
 }

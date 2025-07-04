@@ -58,6 +58,7 @@ class DeployPermissions extends Command
             'soft delete',
             'delete',
             'restore',
+            'force delete',
         ]);
 
         $baseSingular = collect([
